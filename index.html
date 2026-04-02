@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hiperorgânicos 13 | Rizoma Generativo</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400&family=Michroma&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #020202;
+            --salmon: #FA8072;
+            --turquoise: #40E0D0;
+            --text: #E0E0E0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Exo 2', sans-serif;
+            overflow: hidden;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Michroma', sans-serif;
+            text-transform: uppercase;
+        }
+
+        #webgl-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 1;
+            touch-action: none; 
+        }
+
+        #ui-layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .logo-container {
+            position: fixed;
+            top: 1.5rem;
+            left: 0;
+            width: 100vw;
+            text-align: center;
+            pointer-events: auto;
+            z-index: 20;
+        }
+
+        .logo-container h1 {
+            font-size: 1rem;
+            font-weight: 400;
+            letter-spacing: 4px;
+            color: var(--text);
+            text-shadow: 0 0 20px rgba(64, 224, 208, 0.2);
+        }
+
+        .logo-container span {
+            color: var(--turquoise);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 5px;
+            display: block;
+            margin-top: 4px;
+            text-transform: uppercase;
+        }
+
+        .left-menu {
+            position: fixed;
+            left: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            border-left: 1px solid rgba(64, 224, 208, 0.2);
+            padding-left: 1rem;
+            pointer-events: auto;
+            z-index: 20;
+        }
+
+        .left-menu button {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .left-menu button::before {
+            content: '';
+            position: absolute;
+            left: -1rem;
+            top: 50%;
+            width: 8px;
+            height: 2px;
+            background: var(--turquoise);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease, background 0.4s ease;
+        }
+
+        .left-menu button:hover, .left-menu button.active {
+            color: var(--salmon);
+            text-shadow: 0 0 10px rgba(250, 128, 114, 0.3);
+            transform: translateX(5px);
+        }
+
+        .left-menu button:hover::before, .left-menu button.active::before {
+            transform: scaleX(1);
+            background: var(--salmon);
+        }
+
+        .panel {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-40%, -50%) scale(0.95);
+            width: 80%;
+            max-width: 700px;
+            background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(64, 224, 208, 0.2);
+            padding: 3.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            pointer-events: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .panel.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-40%, -50%) scale(1);
+        }
+
+        .close-panel {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            color: var(--turquoise);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: color 0.3s, transform 0.3s;
+            z-index: 10;
+        }
+
+        .close-panel:hover {
+            color: var(--salmon);
+            transform: scale(1.1);
+        }
+
+        .panel h2 {
+            color: var(--turquoise);
+            font-family: 'Michroma', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+            padding-right: 2rem;
+        }
+
+        .panel p {
+            line-height: 1.6;
+            font-size: 0.95rem;
+            font-family: 'Exo 2', sans-serif;
+            color: #D0D0D0;
+            margin-bottom: 1rem;
+            font-weight: 300;
+        }
+
+        .panel ul {
+            color: #D0D0D0;
+            font-family: 'Exo 2', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-left: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .participantes-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 1.5rem;
+        }
+
+        .participante-card {
+            display: flex;
+            flex-direction: column;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .participante-card:hover {
+            border-color: var(--turquoise);
+            background: rgba(64, 224, 208, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .participante-img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            margin-bottom: 8px;
+            filter: grayscale(100%) contrast(1.2);
+            transition: filter 0.3s;
+        }
+
+        .participante-card:hover .participante-img {
+            filter: grayscale(0%);
+        }
+
+        .participante-nome {
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: var(--text);
+            text-align: center;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        #participante-view-detail {
+            animation: fadeIn 0.3s ease;
+        }
+
+        .btn-voltar {
+            background: none;
+            border: none;
+            color: var(--salmon);
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.3s;
+        }
+
+        .btn-voltar:hover { color: var(--turquoise); }
+
+        .detail-layout {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+
+        .detail-layout img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border: 1px solid var(--turquoise);
+        }
+
+        .detail-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .detail-links a {
+            color: var(--salmon);
+            text-decoration: none;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            border: 1px solid rgba(250, 128, 114, 0.3);
+            padding: 0.4rem 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .detail-links a:hover {
+            background: var(--salmon);
+            color: #000;
+        }
+
+        .map-container {
+            margin: 1.5rem 0;
+            width: 100%;
+            height: 250px;
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            background: #000;
+        }
+
+        .map-iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            filter: invert(90%) hue-rotate(180deg) contrast(1.1) brightness(0.9);
+        }
+
+        .contact-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            color: #AAA;
+        }
+
+        .contact-info a {
+            color: var(--salmon);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .contact-info a:hover { color: var(--turquoise); }
+        .contact-info span { display: block; margin-bottom: 0.5rem; }
+
+        .btn-laboratorio {
+            display: inline-block;
+            padding: 0.6rem 1.2rem;
+            background: rgba(64, 224, 208, 0.05);
+            border: 1px solid var(--turquoise);
+            color: var(--turquoise) !important;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .btn-laboratorio:hover {
+            background: var(--turquoise);
+            color: #000 !important;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--salmon); border-radius: 2px; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .controls-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 0.8rem;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .control-btn {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--turquoise);
+            color: var(--turquoise);
+            padding: 0.35rem 0.7rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
+        }
+
+        .control-btn:hover { background: var(--turquoise); color: #000; }
+        #btn-biosensor { border-color: var(--salmon); color: var(--salmon); }
+        #btn-biosensor:hover { background: var(--salmon); color: #000; }
+
+        @media (max-width: 900px) {
+            .logo-container h1 { font-size: 0.8rem; letter-spacing: 2px; }
+            .logo-container span { font-size: 0.65rem; }
+            
+            .left-menu {
+                left: 1rem;
+                bottom: 4.5rem;
+                gap: 1rem;
+                padding-left: 0.5rem;
+            }
+            .left-menu button { font-size: 0.75rem; }
+            
+            .controls-container {
+                bottom: 1.5rem;
+                right: 1rem;
+                flex-direction: column; 
+                align-items: flex-end;
+                gap: 0.5rem;
+            }
+
+            .panel { 
+                width: 92%; padding: 1.5rem; left: 50%; top: 45%; transform: translate(-50%, -50%) scale(0.95); 
+                max-height: 70vh;
+            }
+            .panel.active { transform: translate(-50%, -50%) scale(1); }
+            .participantes-grid { grid-template-columns: repeat(2, 1fr); }
+            .detail-layout { flex-direction: column; gap: 1rem; align-items: center; text-align: center; }
+            .detail-links { justify-content: center; }
+            .contact-info { flex-direction: column; align-items: flex-start; }
+            .btn-laboratorio { width: 100%; text-align: center; margin-top: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="webgl-canvas"></canvas>
+
+    <div id="ui-layer">
+        
+        <div class="logo-container">
+            <h1>Hiperorgânicos 13</h1>
+            <span>Acoplamentos Sutis</span>
+        </div>
+
+        <nav class="left-menu">
+            <button onclick="navTo('evento')" id="nav-evento">O Evento</button>
+            <button onclick="navTo('participantes')" id="nav-participantes">Participantes</button>
+            <button onclick="navTo('local')" id="nav-local">Saiba Mais</button>
+        </nav>
+
+        <div id="panel-evento" class="panel">
+            <button class="close-panel" onclick="fecharPaineis()" aria-label="Fechar Painel">×</button>
+            <h2>O Hiperorgânicos</h2>
+            <p>Promovido pelo NANO (Núcleo de Arte e Novos Organismos), o Hiperorgânicos funciona como uma zona autônoma e temporária de pesquisa, focada nas intersecções indissociáveis entre arte, tecnologia e natureza.</p>
+            <p>A 13ª edição, <em>Acoplamentos Sutis</em>, estrutura-se em dois eixos complementares de ação e reflexão:</p>
+            <ul>
+                <li><strong style="color: var(--salmon);">Simpósio:</strong> Espaço de confluência teórica, apresentação de pesquisas e debates sobre as tensões entre infraestruturas tecnológicas, cosmotécnica e ecologias políticas.</li>
+                <li><strong style="color: var(--turquoise);">OpenLab:</strong> Laboratório aberto de experimentação prática, criação colaborativa e desenvolvimento de protótipos e sistemas cibernéticos interespecíficos.</li>
+            </ul>
+        </div>
+
+        <div id="panel-participantes" class="panel">
+            <button class="close-panel" onclick="fecharPaineis()" aria-label="Fechar Painel">×</button>
+            
+            <div id="participantes-view-grid">
+                <h2>Confluências</h2>
+                <div class="participantes-grid" id="participantes-container"></div>
+            </div>
+            
+            <div id="participante-view-detail" style="display: none;">
+                <button class="btn-voltar" onclick="fecharDetalheParticipante()">← VOLTAR AO RIZOMA</button>
+                <div class="detail-layout">
+                    <img id="detail-img" src="" alt="Simulação do Participante">
+                    <div>
+                        <h2 id="detail-nome" style="margin-bottom: 0.5rem;">Nome</h2>
+                        <p id="detail-bio">Pesquisador(a) e artista multimídia explorando a materialidade dos dados, ecologias sintéticas e a dimensão política das infraestruturas tecnológicas.</p>
+                        <div class="detail-links">
+                            <a id="detail-ig" href="#" target="_blank">INSTAGRAM</a>
+                            <a id="detail-site" href="#" target="_blank">WEBSITE</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="panel-local" class="panel">
+            <button class="close-panel" onclick="fecharPaineis()" aria-label="Fechar Painel">×</button>
+            <h2>Saiba Mais</h2>
+            <p>O encontro físico e as experimentações operam a partir das instalações do laboratório, fundindo as materialidades locais às redes de reflexão do simpósio.</p>
+            
+            <div class="map-container">
+                <iframe class="map-iframe" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3676.883712398504!2d-43.23075242385155!3d-22.843787735623086!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x997931c8903c5d%3A0xe5aef13be8254b38!2sEscola%20de%20Belas%20Artes%20-%20UFRJ!5e0!3m2!1spt-BR!2sbr!4v1700000000000!5m2!1spt-BR!2sbr" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+
+            <div class="contact-info">
+                <div>
+                    <span>E-mail: <a href="mailto:nanolab@eba.ufrj.br">nanolab@eba.ufrj.br</a></span>
+                    <span>Instagram: <a href="https://instagram.com/nano_ufrj" target="_blank">@nano_ufrj</a></span>
+                    <span>YouTube: <a href="https://youtube.com/@NANOUFRJ" target="_blank">@NANOUFRJ</a></span>
+                </div>
+                <a href="https://nano.eba.ufrj.br/" target="_blank" class="btn-laboratorio">Conheça nosso Laboratório ↳</a>
+            </div>
+        </div>
+
+        <div class="controls-container">
+            <button id="btn-camera" class="control-btn">Visão Sistêmica</button>
+            <button id="btn-biosensor" class="control-btn">Acoplar Bio-Sensor</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // MOTOR DE ÁUDIO GENERATIVO (Web Audio API)
+        // ==========================================
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+        let lastHoverSound = 0;
+
+        function initAudio() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        window.addEventListener('click', initAudio, { once: true });
+        window.addEventListener('touchstart', initAudio, { once: true });
+
+        function playHoverSound() {
+            if (audioCtx.state === 'suspended') return;
+            
+            const now = audioCtx.currentTime;
+            if (now - lastHoverSound < 0.15) return; 
+            lastHoverSound = now;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            const freqs = [329.63, 392.00, 440.00, 523.25, 659.25, 783.99];
+            osc.frequency.setValueAtTime(freqs[Math.floor(Math.random() * freqs.length)], now);
+            osc.type = 'sine';
+
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.015, now + 0.05); 
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 1.5);
+        }
+
+        // ==========================================
+        // SISTEMA CINEMÁTICO BASEADO NO TEMPO LOCAL
+        // ==========================================
+        const timePalettes = [
+            { bg: 0x05050A, fog: 0x05050A, c1: 0x00FFCC, c2: 0x4B0082 }, // 00h-05h: Noite
+            { bg: 0x0F0A05, fog: 0x0F0A05, c1: 0xFFB347, c2: 0x40E0D0 }, // 06h-11h: Aurora
+            { bg: 0x020202, fog: 0x020202, c1: 0x40E0D0, c2: 0xFA8072 }, // 12h-17h: Dia 
+            { bg: 0x0A0205, fog: 0x0A0205, c1: 0xFF00FF, c2: 0xFA8072 }  // 18h-23h: Crepúsculo
+        ];
+
+        function getPaletteByHour() {
+            const hour = new Date().getHours();
+            if (hour < 6) return timePalettes[0];
+            if (hour < 12) return timePalettes[1];
+            if (hour < 18) return timePalettes[2];
+            return timePalettes[3];
+        }
+        
+        const currentPalette = getPaletteByHour();
+
+        // ==========================================
+        // SETUP THREE.JS
+        // ==========================================
+        const canvas = document.getElementById('webgl-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(currentPalette.bg);
+        scene.fog = new THREE.FogExp2(currentPalette.fog, 0.012);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        let targetCameraLook = new THREE.Vector3(0, 0, 0);
+        let currentCameraLook = new THREE.Vector3(0, 0, 0);
+        
+        let targetSpherical = new THREE.Spherical(70, Math.PI / 2, 0);
+        let currentSpherical = new THREE.Spherical(70, Math.PI / 2, 0);
+        
+        let isCameraCoupled = false;
+        let globalGrowthSpeed = 1.0; 
+
+        const globalUniforms = {
+            uBioPulse: { value: 0.0 },
+            uTime: { value: 0.0 },
+            color1: { value: new THREE.Color(currentPalette.c1) },
+            color2: { value: new THREE.Color(currentPalette.c2) }
+        };
+
+        // ==========================================
+        // ORGANISMO MACRO (Membrana Translúcida)
+        // ==========================================
+        const membraneVertexShader = `
+            varying vec3 vNormal;
+            varying vec3 vViewPosition;
+            uniform float uTime;
+            uniform float uBioPulse;
+
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+            vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+            float snoise(vec3 v) {
+                const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+                const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+                vec3 i  = floor(v + dot(v, C.yyy));
+                vec3 x0 = v - i + dot(i, C.xxx);
+                vec3 g = step(x0.yzx, x0.xyz);
+                vec3 l = 1.0 - g;
+                vec3 i1 = min(g.xyz, l.zxy);
+                vec3 i2 = max(g.xyz, l.zxy);
+                vec3 x1 = x0 - i1 + C.xxx;
+                vec3 x2 = x0 - i2 + C.yyy;
+                vec3 x3 = x0 - D.yyy;
+                i = mod289(i);
+                vec4 p = permute(permute(permute(
+                            i.z + vec4(0.0, i1.z, i2.z, 1.0))
+                        + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+                        + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+                float n_ = 0.142857142857;
+                vec3 ns = n_ * D.wyz - D.xzx;
+                vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+                vec4 x_ = floor(j * ns.z);
+                vec4 y_ = floor(j - 7.0 * x_);
+                vec4 x = x_ *ns.x + ns.yyyy;
+                vec4 y = y_ *ns.x + ns.yyyy;
+                vec4 h = 1.0 - abs(x) - abs(y);
+                vec4 b0 = vec4(x.xy, y.xy);
+                vec4 b1 = vec4(x.zw, y.zw);
+                vec4 s0 = floor(b0)*2.0 + 1.0;
+                vec4 s1 = floor(b1)*2.0 + 1.0;
+                vec4 sh = -step(h, vec4(0.0));
+                vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+                vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+                vec3 p0 = vec3(a0.xy,h.x);
+                vec3 p1 = vec3(a0.zw,h.y);
+                vec3 p2 = vec3(a1.xy,h.z);
+                vec3 p3 = vec3(a1.zw,h.w);
+                vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+                p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+                vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+                m = m * m;
+                return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+            }
+
+            void main() {
+                float noise = snoise(position * 0.05 + uTime * 0.2);
+                vec3 newPosition = position + (normal * noise * 2.0) + (normal * uBioPulse * 3.0);
+                
+                vec4 mvPosition = modelViewMatrix * vec4(newPosition, 1.0);
+                vViewPosition = -mvPosition.xyz;
+                vNormal = normalize(normalMatrix * normal);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `;
+
+        const membraneFragmentShader = `
+            uniform float uTime;
+            uniform float uBioPulse;
+            uniform vec3 color1;
+            uniform vec3 color2;
+            
+            varying vec3 vNormal;
+            varying vec3 vViewPosition;
+
+            void main() {
+                vec3 normal = normalize(vNormal);
+                vec3 viewDir = normalize(vViewPosition);
+                
+                float rim = 1.0 - max(dot(viewDir, normal), 0.0);
+                float smoothRim = smoothstep(0.7, 1.0, rim);
+                
+                vec3 rimColor = mix(color1, color2, sin(uTime * 0.5 + vViewPosition.y * 0.05) * 0.5 + 0.5);
+                rimColor += vec3(1.0) * uBioPulse;
+                
+                float alpha = (smoothRim * 0.08) + (uBioPulse * 0.1);
+                gl_FragColor = vec4(rimColor, alpha);
+            }
+        `;
+
+        const membraneGeo = new THREE.SphereGeometry(45, 64, 64);
+        membraneGeo.scale(1.0, 1.2, 0.8); 
+        
+        const membraneMat = new THREE.ShaderMaterial({
+            vertexShader: membraneVertexShader,
+            fragmentShader: membraneFragmentShader,
+            uniforms: {
+                uTime: globalUniforms.uTime,
+                uBioPulse: globalUniforms.uBioPulse,
+                color1: globalUniforms.color1,
+                color2: globalUniforms.color2
+            },
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            side: THREE.BackSide 
+        });
+
+        const membrane = new THREE.Mesh(membraneGeo, membraneMat);
+        scene.add(membrane);
+
+
+        // ==========================================
+        // SHADERS DE AREIA/POEIRA LUMINOSA (A REDE)
+        // ==========================================
+        const branchVertexShader = `
+            attribute float pointProgress;
+            varying float vProgress;
+            
+            float rand(vec3 co){
+                return fract(sin(dot(co.xyz ,vec3(12.9898,78.233,45.164))) * 43758.5453);
+            }
+
+            void main() {
+                vProgress = pointProgress;
+                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                float sizeVar = rand(position) * 1.7;
+                gl_PointSize = (0.8 + sizeVar) * (25.0 / -mvPosition.z);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `;
+
+        const branchFragmentShader = `
+            uniform vec3 color;
+            uniform float progress;
+            uniform float uBioPulse;
+            varying float vProgress;
+            
+            void main() {
+                if(vProgress > progress) discard;
+                
+                vec2 circCoord = 2.0 * gl_PointCoord - 1.0;
+                float dist = dot(circCoord, circCoord);
+                
+                if(dist > 1.0) discard;
+                
+                float tipGlow = smoothstep(progress - 0.1, progress, vProgress);
+                vec3 finalColor = mix(color * 1.2, vec3(1.0), tipGlow * 0.7);
+                finalColor += vec3(1.0) * uBioPulse * 1.2;
+                
+                float alpha = pow(1.0 - dist, 2.0) * mix(0.4, 1.0, tipGlow); 
+                gl_FragColor = vec4(finalColor, alpha);
+            }
+        `;
+
+        // ==========================================
+        // ESTRUTURA DE DADOS (Rizoma Espelhado)
+        // ==========================================
+        const nodes = [];
+        const branches = [];
+        nodes.push(new THREE.Vector3(0, 0, 0));
+        nodes.push(new THREE.Vector3(0, 5, 0));
+        nodes.push(new THREE.Vector3(0, -5, 0));
+
+        function spawnDustCluster(center, colorHex) {
+            const numParticles = 400; 
+            const positions = new Float32Array(numParticles * 3);
+            const progresses = new Float32Array(numParticles);
+
+            for (let i = 0; i < numParticles; i++) {
+                const u = Math.random();
+                const v = Math.random();
+                const r = Math.pow(Math.random(), 2.0) * 3.0; 
+                const theta = u * 2.0 * Math.PI;
+                const phi = Math.acos(2.0 * v - 1.0);
+                
+                positions[i*3] = center.x + r * Math.sin(phi) * Math.cos(theta);
+                positions[i*3+1] = center.y + r * Math.sin(phi) * Math.sin(theta);
+                positions[i*3+2] = center.z + r * Math.cos(phi);
+                
+                progresses[i] = 0.0;
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('pointProgress', new THREE.BufferAttribute(progresses, 1));
+
+            const material = new THREE.ShaderMaterial({
+                vertexShader: branchVertexShader,
+                fragmentShader: branchFragmentShader,
+                uniforms: {
+                    color: { value: new THREE.Color(colorHex) },
+                    progress: { value: 0.0 }, 
+                    uBioPulse: globalUniforms.uBioPulse
+                },
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            const clusterMesh = new THREE.Points(geometry, material);
+            scene.add(clusterMesh);
+            branches.push({ mesh: clusterMesh, material: material, progress: 0, speed: 0.05 });
+        }
+
+        function createBranch(targetPoint, isSystemGenerated = false, isMirroredCall = false) {
+            let nearestDist = Infinity;
+            let startNode = nodes[0];
+            for(let n of nodes) {
+                if (n.distanceTo(targetPoint) > 0.1) {
+                    const d = n.distanceToSquared(targetPoint);
+                    if(d < nearestDist) {
+                        nearestDist = d;
+                        startNode = n;
+                    }
+                }
+            }
+            nearestDist = Math.sqrt(nearestDist);
+
+            let finalTarget = targetPoint.clone();
+            if (isSystemGenerated && nearestDist < 10) {
+                if (Math.random() > 0.7 && nodes.length > 5) {
+                    finalTarget = nodes[Math.floor(Math.random() * nodes.length)];
+                }
+            }
+
+            const pointsCount = 12;
+            const curvePoints = [];
+            for(let i = 0; i <= pointsCount; i++) {
+                const t = i / pointsCount;
+                const pt = new THREE.Vector3().lerpVectors(startNode, finalTarget, t);
+                if(i > 0 && i < pointsCount) {
+                    const noise = nearestDist * 0.15;
+                    pt.x += (Math.random() - 0.5) * noise;
+                    pt.y += (Math.random() - 0.5) * noise;
+                    pt.z += (Math.random() - 0.5) * noise;
+                }
+                curvePoints.push(pt);
+            }
+            const curve = new THREE.CatmullRomCurve3(curvePoints);
+
+            const density = isSystemGenerated ? 15 : 30; 
+            const numParticles = Math.floor(nearestDist * density); 
+            const positions = new Float32Array(numParticles * 3);
+            const progresses = new Float32Array(numParticles);
+
+            for (let i = 0; i < numParticles; i++) {
+                const t = Math.random(); 
+                const basePt = curve.getPointAt(t);
+                
+                const scatterRadius = (isSystemGenerated ? 0.8 : 1.2) * Math.random();
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos(2 * Math.random() - 1);
+                
+                positions[i*3] = basePt.x + scatterRadius * Math.sin(phi) * Math.cos(theta);
+                positions[i*3+1] = basePt.y + scatterRadius * Math.sin(phi) * Math.sin(theta);
+                positions[i*3+2] = basePt.z + scatterRadius * Math.cos(phi);
+                
+                progresses[i] = t; 
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('pointProgress', new THREE.BufferAttribute(progresses, 1));
+
+            const isRightSide = finalTarget.x > 0;
+            const branchColor = isRightSide ? globalUniforms.color2.value.clone() : globalUniforms.color1.value.clone();
+
+            const material = new THREE.ShaderMaterial({
+                vertexShader: branchVertexShader,
+                fragmentShader: branchFragmentShader,
+                uniforms: {
+                    color: { value: branchColor },
+                    progress: { value: 0.0 },
+                    uBioPulse: globalUniforms.uBioPulse
+                },
+                transparent: true,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+
+            const pointsMesh = new THREE.Points(geometry, material);
+            scene.add(pointsMesh);
+
+            nodes.push(finalTarget);
+            
+            let bSpeed = isSystemGenerated ? 0.002 : 0.015;
+            branches.push({ mesh: pointsMesh, material: material, progress: 0, speed: bSpeed });
+            
+            if (!isSystemGenerated || nodes.length < 50) {
+                setTimeout(() => spawnDustCluster(finalTarget, branchColor), (1.0 / bSpeed) * 16); 
+            }
+
+            if (!isMirroredCall) {
+                const mirrorTarget = new THREE.Vector3(-finalTarget.x, finalTarget.y, finalTarget.z);
+                createBranch(mirrorTarget, isSystemGenerated, true);
+            }
+        }
+
+        // ==========================================
+        // CRESCIMENTO AUTÔNOMO (Lento e Constante)
+        // ==========================================
+        const participantNodesQueue = [];
+        for(let i = 0; i < 20; i++) {
+            const theta = Math.random() * Math.PI; 
+            const phi = Math.acos((Math.random() * 2) - 1);
+            const r = 15 + Math.random() * 25; 
+            const px = r * Math.sin(phi) * Math.cos(theta);
+            const py = (r * 1.5) * Math.cos(phi); 
+            const pz = (r * 0.3) * Math.sin(phi) * Math.sin(theta);
+            
+            participantNodesQueue.push(new THREE.Vector3(Math.abs(px) + 2, py, pz)); 
+        }
+
+        setInterval(() => {
+            if(participantNodesQueue.length > 0) {
+                const target = participantNodesQueue.shift();
+                createBranch(target, true, false);
+            } else {
+                if (branches.length < 150) {
+                    const rndNode = nodes[Math.floor(Math.random() * nodes.length)];
+                    const drift = new THREE.Vector3((Math.random()-0.5)*15, (Math.random()-0.5)*15, (Math.random()-0.5)*10);
+                    
+                    const newTarget = rndNode.clone().add(drift);
+                    if (newTarget.length() < 40) {
+                        createBranch(newTarget, true, false);
+                    }
+                }
+            }
+        }, 3500);
+
+        // ==========================================
+        // INTERAÇÃO: Rotação, Zoom e Sonificação
+        // ==========================================
+        const raycaster = new THREE.Raycaster();
+        const interactGeo = new THREE.PlaneGeometry(200, 200); 
+        const interactMat = new THREE.MeshBasicMaterial({ visible: false });
+        const interactPlane = new THREE.Mesh(interactGeo, interactMat);
+        scene.add(interactPlane);
+
+        let isDragging = false;
+        let dragDelta = 0;
+        let previousPointer = { x: 0, y: 0 };
+        let lastRaycastTime = 0;
+
+        function spawnBranchAtPointer(clientX, clientY) {
+            let mouse = new THREE.Vector2();
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(interactPlane);
+
+            if (intersects.length > 0) {
+                globalGrowthSpeed = 5.0; 
+                let point = intersects[0].point;
+                if (point.length() > 40) point.normalize().multiplyScalar(40);
+                
+                createBranch(point, false, false);
+            }
+        }
+
+        window.addEventListener('pointerdown', (e) => {
+            if(e.target.tagName === 'BUTTON' || e.target.closest('.panel') || e.target.closest('.left-menu')) return;
+            isDragging = true;
+            dragDelta = 0;
+            previousPointer.x = e.clientX;
+            previousPointer.y = e.clientY;
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isDragging) {
+                if (audioCtx && audioCtx.state === 'running' && Date.now() - lastRaycastTime > 150) {
+                    lastRaycastTime = Date.now();
+                    
+                    let mouse = new THREE.Vector2();
+                    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                    
+                    raycaster.setFromCamera(mouse, camera);
+                    raycaster.params.Points.threshold = 1.0; 
+                    
+                    const pointMeshes = branches.map(b => b.mesh);
+                    if (pointMeshes.length > 0) {
+                        const intersects = raycaster.intersectObjects(pointMeshes);
+                        if (intersects.length > 0) {
+                            playHoverSound();
+                        }
+                    }
+                }
+                return;
+            }
+            
+            let deltaX = e.clientX - previousPointer.x;
+            let deltaY = e.clientY - previousPointer.y;
+            
+            targetSpherical.theta -= deltaX * 0.005;
+            targetSpherical.phi -= deltaY * 0.005;
+            targetSpherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, targetSpherical.phi));
+            
+            dragDelta += Math.abs(deltaX) + Math.abs(deltaY);
+            
+            previousPointer.x = e.clientX;
+            previousPointer.y = e.clientY;
+        });
+
+        window.addEventListener('pointerup', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            if (dragDelta < 5) {
+                spawnBranchAtPointer(e.clientX, e.clientY);
+            }
+        });
+
+        let initialPinchDistance = null;
+
+        window.addEventListener('touchstart', (e) => {
+            if(e.target.tagName === 'BUTTON' || e.target.closest('.panel')) return;
+            if (e.touches.length === 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                initialPinchDistance = Math.hypot(dx, dy);
+            }
+        }, {passive: true});
+
+        window.addEventListener('touchmove', (e) => {
+            if(e.target.closest('.panel') || e.target.closest('.left-menu')) return;
+
+            if (e.touches.length === 2 && initialPinchDistance) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const currentDistance = Math.hypot(dx, dy);
+                
+                const zoomDelta = (initialPinchDistance - currentDistance) * 0.2;
+                initialPinchDistance = currentDistance;
+
+                targetSpherical.radius += zoomDelta;
+                targetSpherical.radius = Math.max(10, Math.min(targetSpherical.radius, 150));
+            }
+        }, {passive: true});
+
+        window.addEventListener('touchend', () => { initialPinchDistance = null; });
+
+        window.addEventListener('wheel', (e) => {
+            if(e.target.closest('.panel') || e.target.closest('.left-menu')) return;
+            
+            targetSpherical.radius += e.deltaY * 0.05;
+            targetSpherical.radius = Math.max(10, Math.min(targetSpherical.radius, 150));
+        }, {passive: true});
+
+        // ==========================================
+        // UI & EVENTOS CURATORIAIS
+        // ==========================================
+        const participantesContainer = document.getElementById('participantes-container');
+        const gridView = document.getElementById('participantes-view-grid');
+        const detailView = document.getElementById('participante-view-detail');
+        const detImg = document.getElementById('detail-img');
+        const detNome = document.getElementById('detail-nome');
+        
+        const nomesFicticios = [
+            "Aisha Lumina", "Kaelen X", "Zuri Nova", "Tariq Flux", "Nia Synth", 
+            "Jaxx Vibe", "Amara Pixel", "Kofi Neon", "Sade Echo", "Malik Tron",
+            "Elara Vox", "Orion Prime", "Lyra Netz", "Cyrus Bit", "Amina Core",
+            "Zane Link", "Kira Byte", "Dante Mesh", "Nova Spark", "Leo Grid",
+            "Maya Glitch", "Kai Node", "Zara Flow", "Omar Sync", "Lila Dash",
+            "Idris Pulse", "Cleo Wave", "Ravi Cyber", "Nila Tech", "Leon Code",
+            "Aya Stream", "Zion Base", "Mila Data", "Jace Web", "Sia Mac",
+            "Eli Hack", "Noa Logic", "Sam Sys", "Ava Net", "Ian Cloud"
+        ];
+
+        function fecharDetalheParticipante() {
+            detailView.style.display = 'none';
+            gridView.style.display = 'block';
+        }
+
+        function fecharPaineis() {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.left-menu button').forEach(b => b.classList.remove('active'));
+            fecharDetalheParticipante();
+            activePanel = null;
+            if(!isCameraCoupled) targetSpherical.radius = 70; 
+        }
+
+        for(let i = 1; i <= 40; i++) {
+            const card = document.createElement('div');
+            card.className = 'participante-card';
+            
+            const imgUrl = `https://picsum.photos/seed/hiper13_${i}/150/150`;
+            const nomeParticipante = nomesFicticios[i - 1] || `Agente ${i}`;
+
+            card.innerHTML = `
+                <img src="${imgUrl}" class="participante-img" alt="Foto">
+                <span class="participante-nome">${nomeParticipante}</span>
+            `;
+
+            card.onclick = () => {
+                const focusNode = nodes.length > 5 ? nodes[Math.floor(Math.random() * (nodes.length - 1)) + 1] : nodes[0];
+                
+                targetCameraLook.copy(focusNode);
+                targetSpherical.radius = 20; 
+                
+                isCameraCoupled = true;
+                btnCamera.innerText = "Câmera: Acoplada";
+                btnCamera.style.color = "var(--turquoise)";
+                btnCamera.style.borderColor = "var(--turquoise)";
+
+                detImg.src = imgUrl;
+                detNome.innerText = nomeParticipante;
+                
+                gridView.style.display = 'none';
+                detailView.style.display = 'block';
+            };
+            
+            participantesContainer.appendChild(card);
+        }
+
+        let activePanel = null;
+        function navTo(id) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.left-menu button').forEach(b => b.classList.remove('active'));
+            fecharDetalheParticipante(); 
+
+            if (activePanel !== id) {
+                document.getElementById(`panel-${id}`).classList.add('active');
+                document.getElementById(`nav-${id}`).classList.add('active');
+                activePanel = id;
+                
+                if(id === 'evento') { targetCameraLook.set(0,0,0); targetSpherical.set(55, Math.PI/2, 0); }
+                if(id === 'participantes') { targetCameraLook.set(0,0,0); targetSpherical.set(40, Math.PI/2, Math.PI/4); }
+                if(id === 'local') { targetCameraLook.set(0,0,0); targetSpherical.set(40, Math.PI/2, -Math.PI/4); }
+            } else {
+                fecharPaineis();
+            }
+        }
+
+        const btnCamera = document.getElementById('btn-camera');
+        btnCamera.addEventListener('click', () => {
+            isCameraCoupled = !isCameraCoupled;
+            if (isCameraCoupled) {
+                btnCamera.innerText = "Câmera: Acoplada";
+                btnCamera.style.color = "var(--turquoise)";
+                btnCamera.style.borderColor = "var(--turquoise)";
+                targetSpherical.radius = 30; 
+            } else {
+                btnCamera.innerText = "Visão Sistêmica";
+                btnCamera.style.color = "var(--salmon)";
+                btnCamera.style.borderColor = "var(--salmon)";
+                targetCameraLook.set(0, 0, 0); 
+                targetSpherical.radius = 70; 
+            }
+        });
+
+        // ==========================================
+        // HARDWARE COM (Web Serial API)
+        // ==========================================
+        let port;
+        let reader;
+        let isArduinoConnected = false;
+        const btnBioSensor = document.getElementById('btn-biosensor');
+
+        btnBioSensor.addEventListener('click', async () => {
+            if (isArduinoConnected) {
+                try {
+                    if (reader) await reader.cancel();
+                    if (port) await port.close();
+                    isArduinoConnected = false;
+                    btnBioSensor.innerText = "Acoplar Bio-Sensor";
+                    btnBioSensor.style.background = "rgba(0,0,0,0.5)";
+                    btnBioSensor.style.color = "var(--salmon)";
+                } catch (e) { console.error(e); }
+                return;
+            }
+
+            try {
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 9600 }); 
+                isArduinoConnected = true;
+                btnBioSensor.innerText = "Sincronizado";
+                btnBioSensor.style.background = "var(--salmon)";
+                btnBioSensor.style.color = "#000";
+
+                const textDecoder = new TextDecoderStream();
+                port.readable.pipeTo(textDecoder.writable);
+                reader = textDecoder.readable.getReader();
+
+                let rawData = "";
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) { reader.releaseLock(); break; }
+                    rawData += value;
+                    const lines = rawData.split('\n');
+                    if (lines.length > 1) {
+                        const pulseString = lines[lines.length - 2].trim();
+                        rawData = lines[lines.length - 1]; 
+                        let sensorValue = parseFloat(pulseString);
+                        if (!isNaN(sensorValue)) {
+                            let normalizedPulse = Math.min(Math.max(sensorValue / 1023, 0.0), 1.0); 
+                            globalUniforms.uBioPulse.value += (normalizedPulse - globalUniforms.uBioPulse.value) * 0.2;
+                            if (normalizedPulse > 0.5) globalGrowthSpeed = 3.0;
+                        }
+                    }
+                }
+            } catch (error) {
+                btnBioSensor.innerText = "Erro na Conexão";
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ==========================================
+        // RENDER PIPELINE
+        // ==========================================
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (globalUniforms.uBioPulse.value > 0.01) {
+                globalUniforms.uBioPulse.value -= 0.02;
+            } else {
+                globalUniforms.uBioPulse.value = 0.0;
+            }
+
+            if (globalGrowthSpeed > 1.0) {
+                globalGrowthSpeed -= 0.05;
+            }
+
+            const elapsedTime = clock.getElapsedTime();
+            globalUniforms.uTime.value = elapsedTime;
+
+            for(let b of branches) {
+                if(b.progress < 1.0) {
+                    b.progress += b.speed * globalGrowthSpeed;
+                    b.material.uniforms.progress.value = b.progress;
+                }
+            }
+
+            if (!isDragging) {
+                const driftSpeed = new Date().getHours() < 6 ? 0.0005 : 0.0015;
+                targetSpherical.theta += driftSpeed; 
+                
+                if (!isCameraCoupled) {
+                    targetSpherical.phi = (Math.PI / 2) + (Math.sin(elapsedTime * 0.2) * 0.3) + (Math.cos(elapsedTime * 0.1) * 0.2);
+                } else {
+                    targetSpherical.phi += Math.sin(elapsedTime * 0.5) * 0.0005;
+                }
+            }
+
+            currentSpherical.radius += (targetSpherical.radius - currentSpherical.radius) * 0.05;
+            currentSpherical.theta += (targetSpherical.theta - currentSpherical.theta) * 0.05;
+            currentSpherical.phi += (targetSpherical.phi - currentSpherical.phi) * 0.05;
+            
+            currentCameraLook.lerp(targetCameraLook, 0.05);
+
+            camera.position.setFromSpherical(currentSpherical).add(currentCameraLook);
+            camera.lookAt(currentCameraLook);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
